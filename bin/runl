@@ -1,0 +1,2 @@
+#!/bin/bash
+XTDB_ENABLE_BYTEUTILS_SHA1=true clj -A:dev -X user/main
