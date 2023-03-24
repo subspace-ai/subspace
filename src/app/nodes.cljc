@@ -25,7 +25,8 @@
                                        (xt/submit-tx !xtdb [[:xtdb.api/put
                                                              {:xt/id id
                                                               :node/text desc
-                                                              :node/type status}]]))))))))))))
+                                                              :node/type status
+                                                              :node/created-at (:node/created-at e)}]]))))))))))))
 
 (e/defn InputSubmit [F]
   (dom/input (dom/props {:placeholder "Insert node content.."})
