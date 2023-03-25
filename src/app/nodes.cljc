@@ -20,40 +20,50 @@
            interval-id-atom (atom nil)]
        (reset! interval-id-atom (js/setInterval (partial check-element interval-id-atom) 50)))))
 
+#?(:clj
+   (defn upsert-li! [!xtdb & [?node ?text]]
+     {:pre [!xtdb]}
+     (let [id (:xt/id ?node (random-uuid))
+           doc (if ?node
+                 (merge ?node {:node/text ?text})
+                 {:xt/id id
+                  :node/text (or ?text "")
+                  :node/type :text
+                  :node/created-at (u/created-at)})]
+
+       (xt/submit-tx !xtdb [[:xtdb.api/put doc]])
+       id)))
+
 (e/defn Node [id]
   (e/server
-   (let [node (xt/entity db id)
-         text (-> node :node/text str)]
+   (let [node (xt/entity db id)]
      (e/client
       (println "rendering" node)
       (dom/li (dom/props {:class "node"})
               (dom/div (dom/props {:class "node-text"
                                    :id (str "node-text-" id)
                                    :contenteditable true})
-                       (dom/text text)
+                       (set! (.-innerText dom/node) (-> node :node/text str))
                        (dom/on "keydown"
                                (e/fn [e]
                                  (println (.-key e))
                                  (cond (= "Enter" (.-key e))
-                                       (do (.preventDefault e)
-                                           (e/server
-                                            (let [created-at (u/created-at)
-                                                  doc {:xt/id (random-uuid)
-                                                       :node/text ""
-                                                       :node/type :text
-                                                       :node/created-at created-at}]
-                                              (xt/submit-tx !xtdb [[:xtdb.api/put doc]])
-                                              (e/client (wait-for-element (str "node-text-" (doc :xt/id))
-                                                                          (fn [e] (.focus e)))))))
+                                       (let [v (-> e .-target .-innerText)]
+                                         (.preventDefault e)
+                                         (e/server
+                                           (upsert-li! !xtdb node v) ; save current node
+                                           (let [id (upsert-li! !xtdb nil "")] ; create new node
+                                             (e/client (wait-for-element (str "node-text-" id)
+                                                         (fn [e] (.focus e)))))))
 
                                        (and (= "Backspace" (.-key e))
-                                            (= 0 (count (.. e -target -innerHTML))))
+                                            (= 0 (count (.. e -target -innerText))))
                                        (e/server
                                         (e/discard
                                          (xt/submit-tx !xtdb [[::xt/delete id]]))))))
                        (dom/on "blur"
                                (e/fn [e]
-                                 (let [text (.. e -target -innerHTML)]
+                                 (let [text (.. e -target -innerText)]
                                    (e/server
                                     (e/discard
                                      (xt/submit-tx !xtdb [[:xtdb.api/put (merge node {:node/text text})]]))))))))))))
@@ -66,7 +76,9 @@
           (map first)
           vec)))
 
-(comment (root-nodes user/db))
+(comment
+  (root-nodes (xt/db user/!xtdb))
+  (upsert-li! user/!xtdb))
 
 (e/defn Nodes []
   (e/server
