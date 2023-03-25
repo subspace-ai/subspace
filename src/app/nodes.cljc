@@ -1,4 +1,5 @@
 (ns app.nodes
+  (:import [hyperfiddle.electric Pending])
   (:require #?(:clj [app.xtdb-contrib :as db])
             #?(:clj [app.utils :as u])
             [hyperfiddle.electric :as e]
@@ -86,8 +87,11 @@
              db (new (db/latest-db> user/!xtdb))]
      (e/client
       (dom/link (dom/props {:rel :stylesheet :href "/nodes.css"}))
-      (dom/div (dom/props {:class "nodes"})
-               (dom/ul
-                (e/server
-                 (e/for-by :xt/id [{:keys [xt/id]} (e/offload #(root-nodes db))]
-                           (Node. id)))))))))
+       (try
+         (dom/div (dom/props {:class "nodes"})
+           (dom/ul
+             (e/server
+               (e/for-by :xt/id [{:keys [xt/id]} (root-nodes db) #_(e/offload #(root-nodes db))] ; Pending is causing over-rendering, fixme
+                 (Node. id)))))
+         (catch Pending _
+           (dom/props {:style {:background-color "yellow"}})))))))
