@@ -16,6 +16,17 @@ For example, additional customizations could be:
 * Wrappers that pull the contents of arxiv documents as subspace nodes.
 * Spaced repetition learning of content (of nodes which you mark to be remembered).
 
+## Setup
+
+```
+brew tap homebrew/cask-versions
+brew install --cask temurin11
+brew install clojure/tools/clojure
+
+brew install jenv
+jenv add /Library/Java/JavaVirtualMachines/temurin-11.jdk/Contents/Home/
+```
+
 ## Running:
 
 ```

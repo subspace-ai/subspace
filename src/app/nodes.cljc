@@ -94,4 +94,4 @@
                (e/for-by :xt/id [{:keys [xt/id]} (root-nodes db) #_(e/offload #(root-nodes db))] ; Pending is causing over-rendering, fixme
                  (Node. id)))))
          (catch Pending _
-           (dom/props {:style {:background-color "yellow"}})))))))
+           (dom/props {:style {:background-color "#e1e1e1"}})))))))
